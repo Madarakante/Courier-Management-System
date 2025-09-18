@@ -45,8 +45,7 @@ app.use(flash());
 const layoutMiddleware = require('./middleware/layout');
 app.use(layoutMiddleware);
 
-// Import models and database
-const db = require('../models');
+const { supabase } = require('./services/supabaseClient');
 
 // Import middleware
 const { isAuthenticated } = require('./middleware/auth');
@@ -90,31 +89,33 @@ app.get('/', (req, res) => {
 
 app.get('/admin', isAuthenticated, async (req, res) => {
     try {
-        // Get dashboard stats
-        const stats = {
-            totalShipments: await db.Shipment.count(),
-            deliveredShipments: await db.Shipment.count({ where: { status: 'delivered' } }),
-            inTransitShipments: await db.Shipment.count({ where: { status: 'in_transit' } }),
-            todayShipments: await db.Shipment.count({
-                where: {
-                    createdAt: {
-                        [db.Sequelize.Op.gte]: new Date().setHours(0, 0, 0, 0),
-                        [db.Sequelize.Op.lt]: new Date().setHours(23, 59, 59, 999)
-                    }
-                }
-            })
-        };
+        // Get dashboard stats from Supabase
+        const [{ count: totalShipments }, { count: deliveredShipments }, { count: inTransitShipments }] = await Promise.all([
+            supabase.from('shipments').select('*', { count: 'exact', head: true }),
+            supabase.from('shipments').select('*', { count: 'exact', head: true }).eq('status', 'delivered'),
+            supabase.from('shipments').select('*', { count: 'exact', head: true }).eq('status', 'in_transit')
+        ]);
 
-        // Get recent shipments
-        const recentShipments = await db.Shipment.findAll({
-            order: [['createdAt', 'DESC']],
-            limit: 5,
-            include: [{
-                model: db.User,
-                as: 'creator',
-                attributes: ['name']
-            }]
-        });
+        // Today's shipments
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+        const end = new Date();
+        end.setHours(23, 59, 59, 999);
+        const { count: todayShipments } = await supabase
+            .from('shipments')
+            .select('*', { count: 'exact', head: true })
+            .gte('createdAt', start.toISOString())
+            .lte('createdAt', end.toISOString());
+
+        const stats = { totalShipments: totalShipments || 0, deliveredShipments: deliveredShipments || 0, inTransitShipments: inTransitShipments || 0, todayShipments: todayShipments || 0 };
+
+        // Get recent shipments with creator name
+        const { data: recentShipments, error: recentErr } = await supabase
+            .from('shipments')
+            .select('*, creator:users(name)')
+            .order('createdAt', { ascending: false })
+            .limit(5);
+        if (recentErr) throw recentErr;
 
         res.render('dashboard/index', { 
             title: 'Dashboard',

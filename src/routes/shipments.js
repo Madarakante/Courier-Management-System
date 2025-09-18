@@ -1,23 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../../models');
-const { Shipment, User, Package } = db;
+const { supabase } = require('../services/supabaseClient');
 const { isAuthenticated } = require('../middleware/auth');
 const { getStatusBadgeClass, formatStatus, formatDate } = require('../utils/helpers');
 const { sendStatusUpdateEmail, sendShipmentCreatedEmail } = require('../services/email');
 const countries = require('../utils/countries');
+const { v4: uuidv4 } = require('uuid');
 
 // List all shipments
 router.get('/', isAuthenticated, async (req, res) => {
     try {
-        const shipments = await Shipment.findAll({
-            include: [{
-                model: User,
-                as: 'creator',
-                attributes: ['name']
-            }],
-            order: [['createdAt', 'DESC']]
-        });
+        const { data: shipments, error } = await supabase
+            .from('shipments')
+            .select('*, creator:users(name)')
+            .order('createdAt', { ascending: false });
+        if (error) throw error;
 
         res.render('shipments/index', { 
             shipments,
@@ -45,24 +42,21 @@ router.get('/create', isAuthenticated, (req, res) => {
 
 // Create new shipment
 router.post('/', isAuthenticated, async (req, res) => {
-    const transaction = await db.sequelize.transaction();
-    
     try {
-        // Create shipment
-        const shipment = await Shipment.create({
-            // Shipper Details
+        const year = new Date().getFullYear().toString().substr(-2);
+        const uniqueId = uuidv4().substr(0, 6).toUpperCase();
+        const trackingNumber = `AS${year}${uniqueId}`;
+
+        const shipmentPayload = {
+            trackingNumber,
             shipperName: req.body.shipperName,
             shipperPhone: req.body.shipperPhone,
             shipperEmail: req.body.shipperEmail,
             shipperAddress: req.body.shipperAddress,
-            
-            // Receiver Details
             receiverName: req.body.receiverName,
             receiverPhone: req.body.receiverPhone,
             receiverEmail: req.body.receiverEmail,
             receiverAddress: req.body.receiverAddress,
-            
-            // Shipment Details
             shipmentType: req.body.shipmentType,
             courier: req.body.courier,
             mode: req.body.mode,
@@ -77,69 +71,92 @@ router.post('/', isAuthenticated, async (req, res) => {
             pickupTime: req.body.pickupTime,
             expectedDeliveryDate: req.body.expectedDeliveryDate,
             comments: req.body.comments,
-            
-            // System fields
             status: 'pending',
             currentLocation: req.body.origin,
             createdBy: req.user.id
-        }, { transaction });
+        };
 
-        // Process packages
-        if (req.body.packages) {
-            // Group package data by index
-            const groupedData = {};
-            Object.keys(req.body).forEach(key => {
-                if (key.startsWith('packages[')) {
-                    const match = key.match(/packages\[(\d+)\]\[(\w+)\]/);
-                    if (match) {
-                        const [, index, field] = match;
-                        if (!groupedData[index]) {
-                            groupedData[index] = {};
-                        }
-                        groupedData[index][field] = req.body[key];
-                    }
-                }
-            });
+        const { data: shipment, error: shipmentErr } = await supabase
+            .from('shipments')
+            .insert(shipmentPayload)
+            .select('*')
+            .single();
+        if (shipmentErr) throw shipmentErr;
 
-            // Convert grouped data to array of package objects
-            const packageObjects = Object.values(groupedData).map(pkg => ({
+        // Parse only flat keys: packages[<idx>].field or packages[<idx>][field]
+        const allowedFields = new Set(['quantity','pieceType','description','length','width','height','weight']);
+        const groupedByIndex = {};
+        for (const [key, value] of Object.entries(req.body)) {
+            if (!key.startsWith('packages[')) continue;
+            let match = key.match(/packages\[(\d+)\]\.(\w+)/);
+            if (!match) match = key.match(/packages\[(\d+)\]\[(\w+)\]/);
+            if (!match) continue;
+            const idx = match[1];
+            const field = match[2];
+            if (!allowedFields.has(field)) continue;
+            if (!groupedByIndex[idx]) groupedByIndex[idx] = {};
+            groupedByIndex[idx][field] = value;
+        }
+        const hasMeaningfulData = (raw) => {
+            const meaningfulFields = ['pieceType','description','length','width','height','weight'];
+            return meaningfulFields.some(f => raw[f] !== undefined && raw[f] !== '');
+        };
+
+        let packageObjects = Object.values(groupedByIndex)
+            .filter(raw => hasMeaningfulData(raw))
+            .map(raw => ({
                 shipmentId: shipment.id,
-                quantity: parseInt(pkg.quantity) || 1,
-                pieceType: pkg.pieceType,
-                description: pkg.description,
-                length: parseFloat(pkg.length) || 0,
-                width: parseFloat(pkg.width) || 0,
-                height: parseFloat(pkg.height) || 0,
-                weight: parseFloat(pkg.weight) || 0
+                quantity: parseInt(raw.quantity) || 1,
+                pieceType: raw.pieceType ?? null,
+                description: raw.description ?? null,
+                length: raw.length === undefined || raw.length === '' ? 0 : parseFloat(raw.length),
+                width: raw.width === undefined || raw.width === '' ? 0 : parseFloat(raw.width),
+                height: raw.height === undefined || raw.height === '' ? 0 : parseFloat(raw.height),
+                weight: raw.weight === undefined || raw.weight === '' ? 0 : parseFloat(raw.weight)
             }));
 
-            console.log('Creating packages:', packageObjects);
-            await Package.bulkCreate(packageObjects, { 
-                transaction,
-                validate: true
-            });
+        // Compute volumetricWeight per package (cm^3 / 5000) and round to 2 decimals
+        packageObjects = packageObjects.map(p => ({
+            ...p,
+            volumetricWeight: Number(((p.length * p.width * p.height * p.quantity) / 5000).toFixed(2))
+        }));
+
+        // Update shipment totalPackages if we have packages
+        if (packageObjects.length > 0) {
+            await supabase
+                .from('shipments')
+                .update({ totalPackages: packageObjects.reduce((a, b) => a + (b.quantity || 1), 0) })
+                .eq('id', shipment.id);
         }
 
-        // Create initial history entry
-        await db.ShipmentHistory.create({
+        if (packageObjects.length > 0) {
+            console.log('Parsed packageObjects:', packageObjects);
+            const { data: insertedPkgs, error: pkgErr } = await supabase
+                .from('packages')
+                .insert(packageObjects)
+                .select('*');
+            if (pkgErr) {
+                console.error('Supabase packages insert error:', pkgErr);
+                throw pkgErr;
+            }
+            console.log('Inserted packages:', insertedPkgs);
+        }
+
+        const { error: histErr } = await supabase.from('shipment_history').insert({
             shipmentId: shipment.id,
             status: 'pending',
             location: req.body.origin,
             notes: 'Shipment created',
             updatedBy: req.user.id
-        }, { transaction });
+        });
+        if (histErr) throw histErr;
 
-        await transaction.commit();
-
-        // Send confirmation email
         await sendShipmentCreatedEmail(shipment);
 
         req.flash('success', `Shipment created with tracking number: ${shipment.trackingNumber}`);
         res.redirect('/admin/shipments');
     } catch (error) {
-        await transaction.rollback();
         console.error('Error creating shipment:', error);
-        console.error('Error details:', error.parent || error);
         req.flash('error', 'Failed to create shipment. Please ensure all required fields are filled.');
         res.redirect('/admin/shipments/create');
     }
@@ -149,30 +166,37 @@ router.post('/', isAuthenticated, async (req, res) => {
 router.post('/:id/status', isAuthenticated, async (req, res) => {
     try {
         const { status, location, notes } = req.body;
-        const shipment = await Shipment.findByPk(req.params.id);
 
+        const { data: shipment, error: findErr } = await supabase
+            .from('shipments')
+            .select('*')
+            .eq('id', req.params.id)
+            .maybeSingle();
+        if (findErr) throw findErr;
         if (!shipment) {
             req.flash('error', 'Shipment not found');
             return res.redirect('/admin/shipments');
         }
 
-        // Update shipment status
-        await shipment.update({
-            status,
-            currentLocation: location,
-            currentLocationUpdatedAt: new Date()
-        });
+        const { error: updateErr } = await supabase
+            .from('shipments')
+            .update({
+                status,
+                currentLocation: location,
+                currentLocationUpdatedAt: new Date().toISOString()
+            })
+            .eq('id', shipment.id);
+        if (updateErr) throw updateErr;
 
-        // Create history entry
-        await db.ShipmentHistory.create({
+        const { error: histErr } = await supabase.from('shipment_history').insert({
             shipmentId: shipment.id,
             status,
             location,
             notes,
             updatedBy: req.user.id
         });
+        if (histErr) throw histErr;
 
-        // Send status update email
         await sendStatusUpdateEmail(shipment, status, location);
 
         req.flash('success', 'Shipment status updated successfully');
@@ -187,29 +211,17 @@ router.post('/:id/status', isAuthenticated, async (req, res) => {
 // View shipment details
 router.get('/:id', isAuthenticated, async (req, res) => {
     try {
-        const shipment = await Shipment.findByPk(req.params.id, {
-            include: [
-                {
-                    model: User,
-                    as: 'creator',
-                    attributes: ['name']
-                },
-                {
-                    model: db.ShipmentHistory,
-                    as: 'history',
-                    include: [{
-                        model: User,
-                        as: 'updater',
-                        attributes: ['name']
-                    }],
-                    order: [['createdAt', 'DESC']]
-                },
-                {
-                    model: Package,
-                    as: 'packages'
-                }
-            ]
-        });
+        const { data: shipment, error } = await supabase
+            .from('shipments')
+            .select(`
+                *,
+                creator:users(name),
+                history:shipment_history(*, updater:users(name)),
+                packages:packages(*)
+            `)
+            .eq('id', req.params.id)
+            .maybeSingle();
+        if (error) throw error;
 
         if (!shipment) {
             req.flash('error', 'Shipment not found');

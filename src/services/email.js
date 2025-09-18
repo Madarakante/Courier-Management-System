@@ -26,14 +26,14 @@ const statusDescriptions = {
 const templates = {
     statusUpdate: (shipment, status, location) => {
         const statusDescription = statusDescriptions[status] || 'Status has been updated.';
-        const estimatedDelivery = shipment.estimatedDelivery ? 
-            new Date(shipment.estimatedDelivery).toLocaleDateString('pt-BR') : 
+        const estimatedDelivery = shipment.expectedDeliveryDate ? 
+            new Date(shipment.expectedDeliveryDate).toLocaleDateString('pt-BR') : 
             'To be determined';
 
         return {
             subject: `Shipment ${shipment.trackingNumber} - ${status.toUpperCase()}`,
             text: `
-Dear ${shipment.customerName},
+Dear ${shipment.receiverName || shipment.shipperName || 'Customer'},
 
 Your shipment ${shipment.trackingNumber} has been updated:
 
@@ -44,11 +44,11 @@ Last Updated: ${new Date().toLocaleDateString('pt-BR')}
 Status Details: ${statusDescription}
 
 Shipment Information:
-- Origin: ${shipment.originLocation}
-- Destination: ${shipment.destinationLocation}
+- Origin: ${shipment.origin}
+- Destination: ${shipment.destination}
 - Estimated Delivery: ${estimatedDelivery}
 
-Track your shipment at: https://atlanticshipping.com.br/track/${shipment.trackingNumber}
+Visit our website: https://atlanticshippings.com
 
 If you have any questions or concerns, please don't hesitate to contact us:
 Email: operations@atlanticshippings.com
@@ -78,15 +78,15 @@ Thank you for choosing Atlantic Shipping.
 
                     <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
                         <h3 style="color: #2c3e50; margin: 0 0 10px 0;">Shipment Information</h3>
-                        <p style="margin: 5px 0;"><strong>Origin:</strong> ${shipment.originLocation}</p>
-                        <p style="margin: 5px 0;"><strong>Destination:</strong> ${shipment.destinationLocation}</p>
+                        <p style="margin: 5px 0;"><strong>Origin:</strong> ${shipment.origin}</p>
+                        <p style="margin: 5px 0;"><strong>Destination:</strong> ${shipment.destination}</p>
                         <p style="margin: 5px 0;"><strong>Estimated Delivery:</strong> ${estimatedDelivery}</p>
                     </div>
 
                     <div style="text-align: center; margin: 25px 0;">
-                        <a href="https://atlanticshipping.com.br/track/${shipment.trackingNumber}" 
+                        <a href="https://atlanticshippings.com" 
                            style="background: #3498db; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
-                            Track Your Shipment
+                            Visit Our Website
                         </a>
                     </div>
 
@@ -111,25 +111,25 @@ Thank you for choosing Atlantic Shipping.
     shipmentCreated: (shipment) => ({
         subject: `Shipment Confirmation - ${shipment.trackingNumber}`,
         text: `
-Dear ${shipment.customerName},
+Dear ${shipment.receiverName || shipment.shipperName || 'Customer'},
 
 Thank you for choosing Atlantic Shipping. Your shipment has been successfully registered in our system.
 
 Shipment Details:
 - Tracking Number: ${shipment.trackingNumber}
-- Origin: ${shipment.originLocation}
-- Destination: ${shipment.destinationLocation}
+- Origin: ${shipment.origin}
+- Destination: ${shipment.destination}
 - Status: Registered for Shipping
-${shipment.estimatedDelivery ? `- Estimated Delivery: ${new Date(shipment.estimatedDelivery).toLocaleDateString('pt-BR')}` : ''}
+${shipment.expectedDeliveryDate ? `- Estimated Delivery: ${new Date(shipment.expectedDeliveryDate).toLocaleDateString('pt-BR')}` : ''}
 
 Customer Information:
-- Name: ${shipment.customerName}
-- Email: ${shipment.customerEmail}
-- Phone: ${shipment.customerPhone}
-- Address: ${shipment.customerAddress}
+- Name: ${shipment.receiverName || shipment.shipperName || ''}
+- Email: ${shipment.receiverEmail || shipment.shipperEmail || ''}
+- Phone: ${shipment.receiverPhone || shipment.shipperPhone || ''}
+- Address: ${shipment.receiverAddress || shipment.shipperAddress || ''}
 
-You can track your shipment at any time by visiting:
-https://atlanticshipping.com.br/track/${shipment.trackingNumber}
+You can learn more by visiting our website:
+https://atlanticshippings.com
 
 If you have any questions or concerns, please don't hesitate to contact us:
 Email: operations@atlanticshippings.com
@@ -149,26 +149,26 @@ Thank you for your business!
                 <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
                     <h3 style="color: #2c3e50; margin: 0 0 10px 0;">Shipment Details</h3>
                     <p style="margin: 5px 0;"><strong>Tracking Number:</strong> ${shipment.trackingNumber}</p>
-                    <p style="margin: 5px 0;"><strong>Origin:</strong> ${shipment.originLocation}</p>
-                    <p style="margin: 5px 0;"><strong>Destination:</strong> ${shipment.destinationLocation}</p>
+                    <p style="margin: 5px 0;"><strong>Origin:</strong> ${shipment.origin}</p>
+                    <p style="margin: 5px 0;"><strong>Destination:</strong> ${shipment.destination}</p>
                     <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: #3498db;">Registered for Shipping</span></p>
-                    ${shipment.estimatedDelivery ? 
-                        `<p style="margin: 5px 0;"><strong>Estimated Delivery:</strong> ${new Date(shipment.estimatedDelivery).toLocaleDateString('pt-BR')}</p>` 
+                    ${shipment.expectedDeliveryDate ? 
+                        `<p style="margin: 5px 0;"><strong>Estimated Delivery:</strong> ${new Date(shipment.expectedDeliveryDate).toLocaleDateString('pt-BR')}</p>` 
                         : ''}
                 </div>
 
                 <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0;">
                     <h3 style="color: #2c3e50; margin: 0 0 10px 0;">Customer Information</h3>
-                    <p style="margin: 5px 0;"><strong>Name:</strong> ${shipment.customerName}</p>
-                    <p style="margin: 5px 0;"><strong>Email:</strong> ${shipment.customerEmail}</p>
-                    <p style="margin: 5px 0;"><strong>Phone:</strong> ${shipment.customerPhone}</p>
-                    <p style="margin: 5px 0;"><strong>Address:</strong> ${shipment.customerAddress}</p>
+                    <p style="margin: 5px 0;"><strong>Name:</strong> ${shipment.receiverName || shipment.shipperName || ''}</p>
+                    <p style="margin: 5px 0;"><strong>Email:</strong> ${shipment.receiverEmail || shipment.shipperEmail || ''}</p>
+                    <p style="margin: 5px 0;"><strong>Phone:</strong> ${shipment.receiverPhone || shipment.shipperPhone || ''}</p>
+                    <p style="margin: 5px 0;"><strong>Address:</strong> ${shipment.receiverAddress || shipment.shipperAddress || ''}</p>
                 </div>
 
                 <div style="text-align: center; margin: 25px 0;">
-                    <a href="https://atlanticshipping.com.br/track/${shipment.trackingNumber}" 
+                    <a href="https://atlanticshippings.com" 
                        style="background: #3498db; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
-                        Track Your Shipment
+                        Visit Our Website
                     </a>
                 </div>
 
@@ -192,12 +192,20 @@ Thank you for your business!
 
 // Send email function
 const sendEmail = async (to, template) => {
+    if (!to) {
+        console.warn('Skipping email send: no recipient');
+        return false;
+    }
     const mailOptions = {
         from: {
             name: 'Atlantic Shipping',
             address: process.env.EMAIL_USER
         },
         to,
+        replyTo: 'support@atlanticshippings.com',
+        headers: {
+            'List-Unsubscribe': `<mailto:unsubscribe@atlanticshippings.com>, <https://atlanticshippings.com/unsubscribe?email=${encodeURIComponent(to)}>`
+        },
         subject: template.subject,
         text: template.text,
         html: template.html
@@ -216,10 +224,12 @@ const sendEmail = async (to, template) => {
 // Email notification functions
 exports.sendStatusUpdateEmail = async (shipment, status, location) => {
     const template = templates.statusUpdate(shipment, status, location);
-    return await sendEmail(shipment.customerEmail, template);
+    const to = shipment.receiverEmail || shipment.shipperEmail;
+    return await sendEmail(to, template);
 };
 
 exports.sendShipmentCreatedEmail = async (shipment) => {
     const template = templates.shipmentCreated(shipment);
-    return await sendEmail(shipment.customerEmail, template);
+    const to = shipment.receiverEmail || shipment.shipperEmail;
+    return await sendEmail(to, template);
 };

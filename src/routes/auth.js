@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
-const db = require('../../models');
-const { User } = db;
+const { supabase } = require('../services/supabaseClient');
 const { createToken } = require('../middleware/auth');
 
 // Login page
@@ -18,22 +17,27 @@ router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Find user
-        const user = await User.findOne({ where: { email } });
+        // Find user in Supabase
+        const { data: user, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', email)
+            .maybeSingle();
+        if (error) throw error;
         if (!user) {
             req.flash('error', 'Invalid email or password');
             return res.redirect('/auth/login');
         }
 
-        // Check password
-        const isMatch = await user.comparePassword(password);
+        // Check password (bcrypt compare against stored hash)
+        const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             req.flash('error', 'Invalid email or password');
             return res.redirect('/auth/login');
         }
 
         // Update last login
-        await user.update({ lastLogin: new Date() });
+        await supabase.from('users').update({ lastLogin: new Date().toISOString() }).eq('id', user.id);
 
         // Create token and set cookie
         const token = createToken(user);

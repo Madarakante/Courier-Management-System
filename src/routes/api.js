@@ -1,31 +1,27 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../../models');
-const { Shipment } = db;
 const { getCountryName } = require('../utils/helpers');
+const { supabase } = require('../services/supabaseClient');
 
 // Track shipment API endpoint
 router.get('/track/:trackingNumber', async (req, res) => {
     try {
-        const shipment = await Shipment.findOne({
-            where: { trackingNumber: req.params.trackingNumber },
-            include: [
-                {
-                    model: db.ShipmentHistory,
-                    as: 'history',
-                    include: [{
-                        model: db.User,
-                        as: 'updater',
-                        attributes: ['name']
-                    }],
-                    order: [['createdAt', 'DESC']]
-                },
-                {
-                    model: db.Package,
-                    as: 'packages'
-                }
-            ]
-        });
+        const trackingNumber = req.params.trackingNumber;
+
+        const { data: shipment, error: shipmentError } = await supabase
+            .from('shipments')
+            .select(`
+                *,
+                history:shipment_history(*, updater:users(name)),
+                packages:packages(*)
+            `)
+            .eq('trackingNumber', trackingNumber)
+            .maybeSingle();
+
+        if (shipmentError) {
+            console.error('Supabase shipment fetch error:', shipmentError);
+            return res.status(500).json({ success: false, message: 'Erro interno do servidor' });
+        }
 
         if (!shipment) {
             return res.status(404).json({
@@ -57,7 +53,7 @@ router.get('/track/:trackingNumber', async (req, res) => {
                     phone: shipment.receiverPhone,
                     address: shipment.receiverAddress
                 },
-                packages: shipment.packages.map(pkg => ({
+                packages: (shipment.packages || []).map(pkg => ({
                     type: pkg.pieceType,
                     quantity: pkg.quantity,
                     description: pkg.description,
@@ -70,9 +66,9 @@ router.get('/track/:trackingNumber', async (req, res) => {
                     weight: pkg.weight,
                     volumetricWeight: pkg.volumetricWeight
                 })),
-                history: shipment.history.map(entry => ({
+                history: (shipment.history || []).map(entry => ({
                     status: entry.status,
-                    location: entry.location, // Use the actual location from history
+                    location: entry.location,
                     notes: entry.notes,
                     timestamp: entry.createdAt,
                     updatedBy: entry.updater ? entry.updater.name : 'System'
@@ -100,6 +96,19 @@ router.get('/track/:trackingNumber', async (req, res) => {
             success: false,
             message: 'Erro interno do servidor'
         });
+    }
+});
+
+// Healthcheck for Supabase connectivity
+router.get('/health/supabase', async (req, res) => {
+    try {
+        const { error } = await supabase.from('shipments').select('id').limit(1);
+        if (error) {
+            return res.status(500).json({ ok: false, error: error.message });
+        }
+        res.json({ ok: true });
+    } catch (err) {
+        res.status(500).json({ ok: false, error: err.message });
     }
 });
 

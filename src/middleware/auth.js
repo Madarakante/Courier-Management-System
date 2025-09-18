@@ -1,6 +1,5 @@
 const jwt = require('jsonwebtoken');
-const db = require('../../models');
-const { User } = db;
+const { supabase } = require('../services/supabaseClient');
 
 exports.isAuthenticated = async (req, res, next) => {
     try {
@@ -14,8 +13,12 @@ exports.isAuthenticated = async (req, res, next) => {
         // Verify token
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
         
-        // Get user from token
-        const user = await User.findByPk(decoded.id);
+        // Get user from Supabase
+        const { data: user } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', decoded.id)
+            .maybeSingle();
         if (!user) {
             return res.redirect('/auth/login');
         }
