@@ -5,29 +5,41 @@ exports.isAuthenticated = async (req, res, next) => {
     try {
         // Check for token in cookies
         const token = req.cookies.token;
+        console.log('Auth middleware - token present:', !!token);
         
         if (!token) {
+            console.log('No token found, redirecting to login');
             return res.redirect('/auth/login');
         }
 
         // Verify token
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+        console.log('Token decoded for user:', decoded.id);
         
         // Get user from Supabase
-        const { data: user } = await supabase
+        const { data: user, error } = await supabase
             .from('users')
             .select('*')
             .eq('id', decoded.id)
             .maybeSingle();
+        
+        if (error) {
+            console.error('Supabase user lookup error in auth:', error);
+            return res.redirect('/auth/login');
+        }
+        
         if (!user) {
+            console.log('User not found in Supabase for id:', decoded.id);
             return res.redirect('/auth/login');
         }
 
+        console.log('User authenticated:', user.email);
         // Add user to request
         req.user = user;
         next();
     } catch (error) {
-        res.redirect('/login');
+        console.error('Auth middleware error:', error);
+        res.redirect('/auth/login');
     }
 };
 
