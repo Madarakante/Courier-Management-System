@@ -12,6 +12,9 @@ dotenv.config();
 
 const app = express();
 
+// Behind reverse proxy/load balancer (e.g., Traefik/NGINX)
+app.set('trust proxy', 1);
+
 // Enable CORS for the API
 app.use('/api', cors());
 
@@ -34,6 +37,7 @@ app.use(session({
     saveUninitialized: false,
     cookie: {
         secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));
