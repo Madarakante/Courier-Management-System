@@ -1,5 +1,8 @@
 # Nixpacks configuration for Dokploy
 
+[variables]
+NODE_VERSION = "20"
+
 [phases.install]
 cmds = [
   "npm ci --omit=dev"
