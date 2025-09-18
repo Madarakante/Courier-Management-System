@@ -1,0 +1,261 @@
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Reports & Analytics</h1>
+        <button class="btn btn-primary" onclick="window.print()">
+            <i class="fas fa-print me-2"></i>Print Report
+        </button>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+        </div>
+        <div class="card-body">
+            <form action="/admin/reports" method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" class="form-control" name="startDate" value="<%= filters.startDate %>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">End Date</label>
+                    <input type="date" class="form-control" name="endDate" value="<%= filters.endDate %>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" name="status">
+                        <option value="all">All Statuses</option>
+                        <option value="pending" <%= filters.status === 'pending' ? 'selected' : '' %>>Pending</option>
+                        <option value="picked_up" <%= filters.status === 'picked_up' ? 'selected' : '' %>>Picked Up</option>
+                        <option value="in_transit" <%= filters.status === 'in_transit' ? 'selected' : '' %>>In Transit</option>
+                        <option value="out_for_delivery" <%= filters.status === 'out_for_delivery' ? 'selected' : '' %>>Out for Delivery</option>
+                        <option value="delivered" <%= filters.status === 'delivered' ? 'selected' : '' %>>Delivered</option>
+                        <option value="failed_delivery" <%= filters.status === 'failed_delivery' ? 'selected' : '' %>>Failed Delivery</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-filter me-2"></i>Apply Filters
+                    </button>
+                    <a href="/admin/reports" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Clear Filters
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Shipments</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800"><%= stats.totalShipments %></div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-box fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Weight</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800"><%= stats.totalWeight.toFixed(2) %> kg</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-weight-hanging fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Total Volume</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800"><%= stats.totalVolume.toFixed(2) %> m³</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-cube fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Delivered Rate</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                <%= ((stats.statusCounts.delivered || 0) / stats.totalShipments * 100).toFixed(1) %>%
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-percentage fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row mb-4">
+        <!-- Status Distribution -->
+        <div class="col-xl-6">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Status Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Count</th>
+                                    <th>Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% Object.entries(stats.statusCounts).forEach(([status, count]) => { %>
+                                    <tr>
+                                        <td>
+                                            <span class="badge bg-<%= getStatusBadgeClass(status) %>">
+                                                <%= formatStatus(status) %>
+                                            </span>
+                                        </td>
+                                        <td><%= count %></td>
+                                        <td><%= (count / stats.totalShipments * 100).toFixed(1) %>%</td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shipment Types -->
+        <div class="col-xl-6">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Shipment Types</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Count</th>
+                                    <th>Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% Object.entries(stats.typeCounts).forEach(([type, count]) => { %>
+                                    <tr>
+                                        <td><%= formatStatus(type) %></td>
+                                        <td><%= count %></td>
+                                        <td><%= (count / stats.totalShipments * 100).toFixed(1) %>%</td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shipments Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Shipments List</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Tracking #</th>
+                            <th>Shipper</th>
+                            <th>Receiver</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th style="width: 100px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% shipments.forEach(shipment => { %>
+                            <tr>
+                                <td><%= shipment.trackingNumber %></td>
+                                <td>
+                                    <%= shipment.shipperName %><br>
+                                    <small class="text-muted"><%= shipment.shipperEmail %></small>
+                                </td>
+                                <td>
+                                    <%= shipment.receiverName %><br>
+                                    <small class="text-muted"><%= shipment.receiverEmail %></small>
+                                </td>
+                                <td>
+                                    <%= formatStatus(shipment.shipmentType) %><br>
+                                    <small class="text-muted"><%= shipment.mode.toUpperCase() %></small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-<%= getStatusBadgeClass(shipment.status) %>">
+                                        <%= formatStatus(shipment.status) %>
+                                    </span>
+                                </td>
+                                <td><%= formatDate(shipment.createdAt) %></td>
+                                <td class="text-nowrap">
+                                    <a href="/admin/shipments/<%= shipment.id %>" class="btn btn-sm btn-info me-1">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="/admin/shipments/<%= shipment.id %>" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .btn, .actions-column {
+        display: none !important;
+    }
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    .table {
+        width: 100% !important;
+    }
+}
+</style>

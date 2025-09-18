@@ -1,0 +1,261 @@
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Shipment Details</h1>
+        <div>
+            <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#updateStatusModal">
+                <i class="fas fa-pencil-alt me-2"></i>Update Status
+            </button>
+            <a href="/admin/shipments" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Shipments
+            </a>
+        </div>
+    </div>
+
+    <% if (error && error.length > 0) { %>
+        <div class="alert alert-danger" role="alert">
+            <%= error %>
+        </div>
+    <% } %>
+
+    <% if (success && success.length > 0) { %>
+        <div class="alert alert-success" role="alert">
+            <%= success %>
+        </div>
+    <% } %>
+
+    <div class="row">
+        <!-- Shipment Information -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold">Shipment Information</h6>
+                    <span class="badge bg-<%= getStatusBadgeClass(shipment.status) %>">
+                        <%= formatStatus(shipment.status) %>
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Tracking Number</h6>
+                            <p class="h5"><%= shipment.trackingNumber %></p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Created By</h6>
+                            <p><%= shipment.creator ? shipment.creator.name : 'System' %></p>
+                        </div>
+                    </div>
+
+                    <!-- Shipper Information -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">Shipper Information</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Name:</strong> <%= shipment.shipperName %></p>
+                                <p><strong>Email:</strong> <%= shipment.shipperEmail %></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Phone:</strong> <%= shipment.shipperPhone %></p>
+                                <p><strong>Address:</strong> <%= shipment.shipperAddress %></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Receiver Information -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">Receiver Information</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Name:</strong> <%= shipment.receiverName %></p>
+                                <p><strong>Email:</strong> <%= shipment.receiverEmail %></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Phone:</strong> <%= shipment.receiverPhone %></p>
+                                <p><strong>Address:</strong> <%= shipment.receiverAddress %></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Shipment Details -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">Shipment Details</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Type:</strong> <%= formatStatus(shipment.shipmentType) %></p>
+                                <p><strong>Mode:</strong> <%= shipment.mode.toUpperCase() %></p>
+                                <p><strong>Origin:</strong> <%= shipment.origin %></p>
+                                <p><strong>Destination:</strong> <%= shipment.destination %></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Carrier:</strong> <%= shipment.carrier || 'N/A' %></p>
+                                <p><strong>Reference No:</strong> <%= shipment.carrierReferenceNo || 'N/A' %></p>
+                                <p><strong>Payment Mode:</strong> <%= formatStatus(shipment.paymentMode) %></p>
+                                <p><strong>Total Freight:</strong> <%= shipment.totalFreight ? `R$ ${shipment.totalFreight}` : 'N/A' %></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dates -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">Important Dates</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Pickup Date:</strong> <%= shipment.pickupDate ? formatDate(shipment.pickupDate) : 'N/A' %></p>
+                                <p><strong>Pickup Time:</strong> <%= shipment.pickupTime || 'N/A' %></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Departure Time:</strong> <%= shipment.departureTime ? formatDate(shipment.departureTime) : 'N/A' %></p>
+                                <p><strong>Expected Delivery:</strong> <%= shipment.expectedDeliveryDate ? formatDate(shipment.expectedDeliveryDate) : 'N/A' %></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Packages -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">Packages</h6>
+                        <% if (shipment.packages && shipment.packages.length > 0) { %>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>Piece Type</th>
+                                            <th>Quantity</th>
+                                            <th>Description</th>
+                                            <th>Dimensions (cm)</th>
+                                            <th>Weight (kg)</th>
+                                            <th>Vol. Weight (kg)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% shipment.packages.forEach(pkg => { %>
+                                            <tr>
+                                                <td><%= formatStatus(pkg.pieceType) %></td>
+                                                <td><%= pkg.quantity %></td>
+                                                <td><%= pkg.description || 'N/A' %></td>
+                                                <td><%= `${pkg.length} × ${pkg.width} × ${pkg.height}` %></td>
+                                                <td><%= pkg.weight %></td>
+                                                <td><%= pkg.volumetricWeight.toFixed(2) %></td>
+                                            </tr>
+                                        <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        <% } else { %>
+                            <p class="text-muted">No packages information available</p>
+                        <% } %>
+                    </div>
+
+                    <% if (shipment.comments) { %>
+                        <div class="mb-4">
+                            <h6 class="text-muted">Comments</h6>
+                            <p><%= shipment.comments %></p>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tracking History -->
+        <div class="col-lg-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Tracking History</h6>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <% if (shipment.history && shipment.history.length > 0) { %>
+                            <% shipment.history.forEach((entry, index) => { %>
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-<%= getStatusBadgeClass(entry.status) %>"></div>
+                                    <div class="timeline-content">
+                                        <h6 class="mb-1"><%= formatStatus(entry.status) %></h6>
+                                        <p class="mb-1"><%= entry.location %></p>
+                                        <% if (entry.notes) { %>
+                                            <p class="text-muted mb-1"><%= entry.notes %></p>
+                                        <% } %>
+                                        <small class="text-muted">
+                                            <%= formatDate(entry.createdAt) %>
+                                            by <%= entry.updater ? entry.updater.name : 'System' %>
+                                        </small>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        <% } else { %>
+                            <p class="text-center text-muted">No history available</p>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Status Modal -->
+<div class="modal fade" id="updateStatusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="/admin/shipments/<%= shipment.id %>/status" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">Update Shipment Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status" required>
+                            <option value="pending" <%= shipment.status === 'pending' ? 'selected' : '' %>>Pending</option>
+                            <option value="picked_up" <%= shipment.status === 'picked_up' ? 'selected' : '' %>>Picked Up</option>
+                            <option value="in_transit" <%= shipment.status === 'in_transit' ? 'selected' : '' %>>In Transit</option>
+                            <option value="out_for_delivery" <%= shipment.status === 'out_for_delivery' ? 'selected' : '' %>>Out for Delivery</option>
+                            <option value="delivered" <%= shipment.status === 'delivered' ? 'selected' : '' %>>Delivered</option>
+                            <option value="failed_delivery" <%= shipment.status === 'failed_delivery' ? 'selected' : '' %>>Failed Delivery</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Current Location</label>
+                        <input type="text" class="form-control" id="location" name="location" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Status</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding: 1rem 0;
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 2rem;
+    margin-bottom: 2rem;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+}
+
+.timeline-item:not(:last-child):before {
+    content: '';
+    position: absolute;
+    left: 0.4rem;
+    top: 1.5rem;
+    height: calc(100% + 1rem);
+    width: 2px;
+    background-color: #e9ecef;
+}
+</style>

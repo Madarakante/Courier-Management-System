@@ -1,0 +1,170 @@
+<!-- Content Section -->
+<div class="container-fluid">
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Shipments</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800"><%= stats.totalShipments %></div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Delivered</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800"><%= stats.deliveredShipments %></div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                In Transit</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800"><%= stats.inTransitShipments %></div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-truck fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Today's Shipments</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800"><%= stats.todayShipments %></div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-box fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <a href="/admin/shipments/create" class="btn btn-primary btn-block mb-3">
+                                <i class="fas fa-plus me-2"></i>New Shipment
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="/admin/shipments" class="btn btn-info btn-block mb-3">
+                                <i class="fas fa-list me-2"></i>View All Shipments
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="/admin/reports" class="btn btn-success btn-block mb-3">
+                                <i class="fas fa-chart-bar me-2"></i>Generate Report
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Shipments -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent Shipments</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Tracking #</th>
+                                    <th>Shipper</th>
+                                    <th>Receiver</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th style="width: 100px; min-width: 100px;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% if (recentShipments && recentShipments.length > 0) { %>
+                                    <% recentShipments.forEach(shipment => { %>
+                                        <tr>
+                                            <td><%= shipment.trackingNumber %></td>
+                                            <td>
+                                                <%= shipment.shipperName %><br>
+                                                <small class="text-muted"><%= shipment.shipperEmail %></small>
+                                            </td>
+                                            <td>
+                                                <%= shipment.receiverName %><br>
+                                                <small class="text-muted"><%= shipment.receiverEmail %></small>
+                                            </td>
+                                            <td>
+                                                <%= formatStatus(shipment.shipmentType) %><br>
+                                                <small class="text-muted"><%= shipment.mode.toUpperCase() %></small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-<%= getStatusBadgeClass(shipment.status) %>">
+                                                    <%= formatStatus(shipment.status) %>
+                                                </span>
+                                            </td>
+                                            <td><%= formatDate(shipment.createdAt) %></td>
+                                            <td class="text-nowrap">
+                                                <a href="/admin/shipments/<%= shipment.id %>" class="btn btn-sm btn-info me-1" title="View Details">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="/admin/shipments/<%= shipment.id %>" class="btn btn-sm btn-primary" title="Update Status">
+                                                    <i class="fas fa-pencil-alt"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    <% }); %>
+                                <% } else { %>
+                                    <tr>
+                                        <td colspan="7" class="text-center">No shipments found</td>
+                                    </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

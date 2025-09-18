@@ -1,0 +1,387 @@
+<%- include('../partials/flash') %>
+
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Create New Shipment</h1>
+    
+    <form action="/admin/shipments" method="POST" id="shipmentForm" class="needs-validation" novalidate>
+        <!-- Shipper Details -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-user me-1"></i>
+                Shipper Details
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="shipperName" class="form-label">Shipper Name</label>
+                        <input type="text" class="form-control" id="shipperName" name="shipperName" required>
+                        <div class="invalid-feedback">Please enter shipper name.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="shipperPhone" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="shipperPhone" name="shipperPhone" required>
+                        <div class="invalid-feedback">Please enter phone number.</div>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="shipperEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="shipperEmail" name="shipperEmail" required>
+                        <div class="invalid-feedback">Please enter a valid email.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="shipperAddress" class="form-label">Address</label>
+                        <textarea class="form-control" id="shipperAddress" name="shipperAddress" rows="2" required></textarea>
+                        <div class="invalid-feedback">Please enter address.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Receiver Details -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-user me-1"></i>
+                Receiver Details
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="receiverName" class="form-label">Receiver Name</label>
+                        <input type="text" class="form-control" id="receiverName" name="receiverName" required>
+                        <div class="invalid-feedback">Please enter receiver name.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="receiverPhone" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="receiverPhone" name="receiverPhone" required>
+                        <div class="invalid-feedback">Please enter phone number.</div>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="receiverEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="receiverEmail" name="receiverEmail" required>
+                        <div class="invalid-feedback">Please enter a valid email.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="receiverAddress" class="form-label">Address</label>
+                        <textarea class="form-control" id="receiverAddress" name="receiverAddress" rows="2" required></textarea>
+                        <div class="invalid-feedback">Please enter address.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shipment Details -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-box me-1"></i>
+                Shipment Details
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="shipmentType" class="form-label">Type of Shipment</label>
+                        <select class="form-select" id="shipmentType" name="shipmentType" required>
+                            <option value="">-- Select One --</option>
+                            <option value="document">Document</option>
+                            <option value="parcel">Parcel</option>
+                            <option value="cargo">Cargo</option>
+                            <option value="express">Express</option>
+                        </select>
+                        <div class="invalid-feedback">Please select shipment type.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="mode" class="form-label">Mode</label>
+                        <select class="form-select" id="mode" name="mode" required>
+                            <option value="">-- Select One --</option>
+                            <option value="air">Air</option>
+                            <option value="sea">Sea</option>
+                            <option value="road">Road</option>
+                            <option value="rail">Rail</option>
+                        </select>
+                        <div class="invalid-feedback">Please select mode.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="courier" class="form-label">Courier</label>
+                        <input type="text" class="form-control" id="courier" name="courier">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="origin" class="form-label">Origin Country</label>
+                        <select class="form-select" id="origin" name="origin" required>
+                            <option value="">-- Select Country --</option>
+                            <% countries.forEach(function(country) { %>
+                                <option value="<%= country.code %>" <%= country.code === 'BR' ? 'selected' : '' %>>
+                                    <%= country.name %>
+                                </option>
+                            <% }); %>
+                        </select>
+                        <div class="invalid-feedback">Please select origin country.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="destination" class="form-label">Destination Country</label>
+                        <select class="form-select" id="destination" name="destination" required>
+                            <option value="">-- Select Country --</option>
+                            <% countries.forEach(function(country) { %>
+                                <option value="<%= country.code %>">
+                                    <%= country.name %>
+                                </option>
+                            <% }); %>
+                        </select>
+                        <div class="invalid-feedback">Please select destination country.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="carrier" class="form-label">Carrier</label>
+                        <select class="form-select" id="carrier" name="carrier">
+                            <option value="">-- Select One --</option>
+                            <option value="atlantic">Atlantic Shipping</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="carrierReferenceNo" class="form-label">Carrier Reference No.</label>
+                        <input type="text" class="form-control" id="carrierReferenceNo" name="carrierReferenceNo">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="paymentMode" class="form-label">Payment Mode</label>
+                        <select class="form-select" id="paymentMode" name="paymentMode" required>
+                            <option value="">-- Select One --</option>
+                            <option value="prepaid">Prepaid</option>
+                            <option value="collect">Collect</option>
+                            <option value="third_party">Third Party</option>
+                        </select>
+                        <div class="invalid-feedback">Please select payment mode.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="totalFreight" class="form-label">Total Freight</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input type="number" class="form-control" id="totalFreight" name="totalFreight" step="0.01">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label for="pickupDate" class="form-label">Pickup Date</label>
+                        <input type="date" class="form-control" id="pickupDate" name="pickupDate">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="pickupTime" class="form-label">Pickup Time</label>
+                        <input type="time" class="form-control" id="pickupTime" name="pickupTime">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="departureTime" class="form-label">Departure Time</label>
+                        <input type="datetime-local" class="form-control" id="departureTime" name="departureTime">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="expectedDeliveryDate" class="form-label">Expected Delivery Date</label>
+                        <input type="date" class="form-control" id="expectedDeliveryDate" name="expectedDeliveryDate">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <label for="comments" class="form-label">Comments</label>
+                        <textarea class="form-control" id="comments" name="comments" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Packages -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-boxes me-1"></i>
+                    Packages
+                </div>
+                <button type="button" class="btn btn-primary btn-sm" id="addPackage">
+                    <i class="fas fa-plus"></i> Add Package
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="packagesContainer">
+                    <!-- Package template will be inserted here -->
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <strong>Total Volumetric Weight:</strong> <span id="totalVolumetricWeight">0.00</span> kg
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Total Volume:</strong> <span id="totalVolume">0.00</span> m³
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Total Actual Weight:</strong> <span id="totalActualWeight">0.00</span> kg
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <button type="submit" class="btn btn-primary">Create Shipment</button>
+            <a href="/admin/shipments" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<!-- Package Template -->
+<template id="packageTemplate">
+    <div class="package-item border rounded p-3 mb-3">
+        <div class="d-flex justify-content-between mb-3">
+            <h6 class="mb-0">Package #<span class="package-number"></span></h6>
+            <button type="button" class="btn btn-danger btn-sm remove-package">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-2">
+                <label class="form-label">Quantity</label>
+                <input type="number" class="form-control" name="packages[].quantity" value="1" min="1" required>
+                <div class="invalid-feedback">Please enter a quantity.</div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Piece Type</label>
+                <select class="form-select" name="packages[].pieceType" required>
+                    <option value="">-- Select Type --</option>
+                    <option value="box">Box</option>
+                    <option value="carton">Carton</option>
+                    <option value="crate">Crate</option>
+                    <option value="pallet">Pallet</option>
+                    <option value="tube">Tube</option>
+                    <option value="roll">Roll</option>
+                    <option value="envelope">Envelope</option>
+                </select>
+                <div class="invalid-feedback">Please select a piece type.</div>
+            </div>
+            <div class="col-md-7">
+                <label class="form-label">Description</label>
+                <input type="text" class="form-control" name="packages[].description">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <label class="form-label">Length (cm)</label>
+                <input type="number" class="form-control dimension" name="packages[].length" step="0.1" min="0" required>
+                <div class="invalid-feedback">Please enter a length.</div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Width (cm)</label>
+                <input type="number" class="form-control dimension" name="packages[].width" step="0.1" min="0" required>
+                <div class="invalid-feedback">Please enter a width.</div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Height (cm)</label>
+                <input type="number" class="form-control dimension" name="packages[].height" step="0.1" min="0" required>
+                <div class="invalid-feedback">Please enter a height.</div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Weight (kg)</label>
+                <input type="number" class="form-control weight" name="packages[].weight" step="0.1" min="0" required>
+                <div class="invalid-feedback">Please enter a weight.</div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let packageCount = 0;
+    const packagesContainer = document.getElementById('packagesContainer');
+    const packageTemplate = document.getElementById('packageTemplate');
+    
+    // Add initial package
+    addPackage();
+
+    // Add Package button click handler
+    document.getElementById('addPackage').addEventListener('click', addPackage);
+
+    // Function to add a new package
+    function addPackage() {
+        packageCount++;
+        const packageElement = document.importNode(packageTemplate.content, true);
+        
+        // Update package number
+        packageElement.querySelector('.package-number').textContent = packageCount;
+        
+        // Update input names with array index
+        packageElement.querySelectorAll('[name^="packages["]').forEach(input => {
+            input.name = input.name.replace('[]', `[${packageCount - 1}]`);
+        });
+
+        // Add remove button handler
+        packageElement.querySelector('.remove-package').addEventListener('click', function() {
+            this.closest('.package-item').remove();
+            updateTotals();
+        });
+
+        // Add dimension and weight change handlers
+        packageElement.querySelectorAll('.dimension, .weight').forEach(input => {
+            input.addEventListener('change', updateTotals);
+        });
+
+        packagesContainer.appendChild(packageElement);
+    }
+
+    // Function to update totals
+    function updateTotals() {
+        let totalVolumetricWeight = 0;
+        let totalVolume = 0;
+        let totalActualWeight = 0;
+
+        document.querySelectorAll('.package-item').forEach(package => {
+            const length = parseFloat(package.querySelector('[name$="].length"]').value) || 0;
+            const width = parseFloat(package.querySelector('[name$="].width"]').value) || 0;
+            const height = parseFloat(package.querySelector('[name$="].height"]').value) || 0;
+            const weight = parseFloat(package.querySelector('[name$="].weight"]').value) || 0;
+            const quantity = parseInt(package.querySelector('[name$="].quantity"]').value) || 1;
+
+            // Calculate volume in cubic meters (cm³ to m³)
+            const volume = (length * width * height * quantity) / 1000000;
+            totalVolume += volume;
+
+            // Calculate volumetric weight (cm³ to kg, using 1:5000 ratio)
+            const volumetricWeight = (length * width * height * quantity) / 5000;
+            totalVolumetricWeight += volumetricWeight;
+
+            // Add actual weight
+            totalActualWeight += weight * quantity;
+        });
+
+        document.getElementById('totalVolumetricWeight').textContent = totalVolumetricWeight.toFixed(2);
+        document.getElementById('totalVolume').textContent = totalVolume.toFixed(2);
+        document.getElementById('totalActualWeight').textContent = totalActualWeight.toFixed(2);
+    }
+
+    // Form validation
+    const form = document.getElementById('shipmentForm');
+    form.addEventListener('submit', function(event) {
+        let isValid = true;
+
+        // Check all required fields in packages
+        document.querySelectorAll('.package-item').forEach(package => {
+            const requiredFields = package.querySelectorAll('[required]');
+            requiredFields.forEach(field => {
+                if (!field.value) {
+                    isValid = false;
+                    field.classList.add('is-invalid');
+                } else {
+                    field.classList.remove('is-invalid');
+                }
+            });
+        });
+
+        if (!form.checkValidity() || !isValid) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+});
+</script>
