@@ -52,7 +52,7 @@ Visit our website: https://atlanticshippings.com
 
 If you have any questions or concerns, please don't hesitate to contact us:
 Email: operations@atlanticshippings.com
-Phone: +5511954271971
+Phone: +55 (27) 3222-313
 
 Thank you for choosing Atlantic Shipping.
             `,
@@ -95,7 +95,7 @@ Thank you for choosing Atlantic Shipping.
                         <p>Contact our customer service team:</p>
                         <ul style="list-style: none; padding: 0;">
                             <li>📧 Email: operations@atlanticshippings.com</li>
-                            <li>📞 Phone: +5511954271971</li>
+                            <li>📞 Phone: +55 (27) 3222-313</li>
                         </ul>
                     </div>
 
@@ -133,7 +133,7 @@ https://atlanticshippings.com
 
 If you have any questions or concerns, please don't hesitate to contact us:
 Email: operations@atlanticshippings.com
-Phone: +5511954271971
+Phone: +55 (27) 3222-313
 
 Thank you for your business!
         `,
@@ -177,7 +177,7 @@ Thank you for your business!
                     <p>Contact our customer service team:</p>
                     <ul style="list-style: none; padding: 0;">
                         <li>📧 Email: operations@atlanticshippings.com</li>
-                        <li>📞 Phone: +5511954271971</li>
+                        <li>📞 Phone: +55 (27) 3222-313</li>
                     </ul>
                 </div>
 
