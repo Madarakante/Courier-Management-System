@@ -40,12 +40,30 @@ router.get('/create', isAuthenticated, (req, res) => {
     });
 });
 
+// Generate tracking number with 2 letters, year, and 7 numbers
+function generateTrackingNumber() {
+    const year = new Date().getFullYear().toString().substr(-2);
+    
+    // Generate 2 random letters
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let letterPart = '';
+    for (let i = 0; i < 2; i++) {
+        letterPart += letters.charAt(Math.floor(Math.random() * letters.length));
+    }
+    
+    // Generate 7 random numbers
+    let numberPart = '';
+    for (let i = 0; i < 7; i++) {
+        numberPart += Math.floor(Math.random() * 10);
+    }
+    
+    return `AS${letterPart}${year}${numberPart}`;
+}
+
 // Create new shipment
 router.post('/', isAuthenticated, async (req, res) => {
     try {
-        const year = new Date().getFullYear().toString().substr(-2);
-        const uniqueId = uuidv4().substr(0, 6).toUpperCase();
-        const trackingNumber = `AS${year}${uniqueId}`;
+        const trackingNumber = generateTrackingNumber();
 
         const shipmentPayload = {
             trackingNumber,
